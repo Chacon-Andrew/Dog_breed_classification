@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os, warnings
 import pandas as pd
+from tqdm import tqdm
+import cv2
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
 
 def set_seed(seed=1469):
     np.random.seed(seed)
@@ -43,87 +47,63 @@ classes = ['n02085620-Chihuahua', 'n02085782-Japanese_spaniel', 'n02085936-Malte
                                                         'n02113978-Mexican_hairless', 'n02115641-dingo', 'n02115913-dhole', 'n02116738-African_hunting_dog'
             ]
 
-train_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    'Dog_breed_classification\Data\images\Images',
-    labels='inferred',
-    label_mode='int',
-    class_names=classes,
-    color_mode='rgb',
-    batch_size=32,
-    image_size=(256, 256),
-    shuffle=True,
-    validation_split=0.2,
-    subset="training",
-    seed=1469
+train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1./255, validation_split=0.25)
+
+train_generator = train_datagen.flow_from_directory(
+    './Data/images/Images',
+    target_size=(150, 150),
+    batch_size=15,
+    class_mode='categorical',
+    subset='training'
 )
 
-val_ds = tf.keras.preprocessing.image_dataset_from_directory(
-    'Dog_breed_classification\Data\images\Images',
-    labels='inferred',
-    label_mode='int',
-    class_names=classes,
-    color_mode='rgb',
-    batch_size=32,
-    image_size=(256, 256),
-    shuffle=True,
-    validation_split=0.2,
-    subset="validation",
-    seed=1469
+epochs = 50
+
+validation_generator = train_datagen.flow_from_directory(
+    './Data/images/Images',
+    target_size=(150, 150),
+    batch_size=15,
+    class_mode='categorical',
+    subset='validation'
 )
-
-def convert_to_float(image, label):
-    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
-    return image, label
-
-AUTOTUNE = tf.data.experimental.AUTOTUNE
-
-train_ds = (
-    train_ds
-    .map(convert_to_float)
-    .cache()
-    .prefetch(buffer_size=AUTOTUNE)
-)
-
-val_ds = (
-    val_ds
-    .map(convert_to_float)
-    .cache()
-    .prefetch(buffer_size=AUTOTUNE)
-)
-
 
 model = tf.keras.Sequential([
-    tf.keras.layers.InputLayer(input_shape=[256, 256, 3]),
-
-    #Data Augment
-    tf.keras.layers.RandomContrast(factor=0.10),
-
-    #Block One
-    tf.keras.layers.BatchNormalization(renorm=True),
-    tf.keras.layers.Conv2D(filters=64, kernel_size=3, activation='relu', padding='same'),
-    tf.keras.layers.MaxPool2D(),
-
-    # Head
-    tf.keras.layers.BatchNormalization(renorm=True),
+    tf.keras.layers.Conv2D(16, (3,3), activation='relu', input_shape=(150, 150, 3)),
+    tf.keras.layers.MaxPooling2D(2, 2),
+    keras.layers.Dropout(rate=0.15), #adding dropout regularization throughout the model to deal with overfitting
+    # The second convolution
+    tf.keras.layers.Conv2D(32, (3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    keras.layers.Dropout(rate=0.1),
+    # The third convolution
+    tf.keras.layers.Conv2D(64, (3,3), activation='relu'),
+    tf.keras.layers.MaxPooling2D(2,2),
+    keras.layers.Dropout(rate=0.10),
+    # Flatten the results to feed into a DNN
     tf.keras.layers.Flatten(),
+    # 512 neuron hidden layer
     tf.keras.layers.Dense(512, activation='relu'),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(120, activation='softmax'),
+
+    # 3 output neuron for the 3 classes of Animal Images
+    tf.keras.layers.Dense(120, activation='softmax')
 ])
 
-optimizer = tf.keras.optimizers.experimental.RMSprop(lr=0.001)
+optimizer = tf.keras.optimizers.Adam(lr=0.001)
 model.compile(
     optimizer=optimizer,
-    loss='sparse_categorical_crossentropy',
-    metrics=['sparse_categorical_accuracy'],
+    loss='categorical_crossentropy',
+    metrics=['categorical_accuracy'],
 )
 model.summary()
-history = model.fit(
-    train_ds,
-    validation_data=val_ds,
-    epochs=50,
+history = model.fit_generator(
+    train_generator,
+    steps_per_epoch=150,
+    epochs=epochs,
+    validation_data=validation_generator,
+    validation_steps=50,
+    verbose=1
 )
 
 history_frame = pd.DataFrame(history.history)
 history_frame.loc[:, ['loss', 'val_loss']].plot()
-history_frame.loc[:, ['sparse_categorical_accuracy', 'val_sparse_categorical_accuracy']].plot()
+history_frame.loc[:, ['categorical_accuracy', 'val_categorical_accuracy']].plot()
