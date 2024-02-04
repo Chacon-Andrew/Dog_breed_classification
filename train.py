@@ -8,6 +8,7 @@ from tqdm import tqdm
 import cv2
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+import cv2
 
 classes = ['n02085620-Chihuahua', 'n02085782-Japanese_spaniel', 'n02085936-Maltese_dog', 'n02086079-Pekinese', 'n02086240-Shih-Tzu', 'n02086646-Blenheim_spaniel',
               'n02086910-papillon', 'n02087046-toy_terrier', 'n02087394-Rhodesian_ridgeback', 'n02088094-Afghan_hound', 'n02088238-basset', 'n02088364-beagle',
@@ -127,5 +128,20 @@ def train():
   history_frame.loc[:, ['categorical_accuracy', 'val_categorical_accuracy']].plot()
   model.save("./model.h5")
 
+class learner:
+  def __init__(self) -> None:
+    self.model = tf.keras.models.load_model("Dog_breed_classification/model.h5")
 
-train()
+  def predict(self):
+    img = tf.keras.preprocessing.image.load_img("Dog_breed_classification/pictures/20230416_113013.jpg")
+    img = tf.keras.preprocessing.image.img_to_array(img)
+    img = tf.keras.preprocessing.image.smart_resize(img, (331, 331))
+    img = tf.reshape(img, (-1, 331, 331, 3))
+    prediction = self.model.predict(img/255)
+    prediction = np.argmax(prediction)
+    print(prediction)
+    return classes[prediction]
+
+#train()
+l = learner()
+print(l.predict())
