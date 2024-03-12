@@ -32,7 +32,7 @@ export default function App() {
         <Camera style={styles.camera} type={type} ref={cameraref} onPress={takePicture}>
           <View style={{position: 'absolute', bottom: 0, marginBottom: 20}}>
             <TouchableOpacity onPress={takePicture} style={styles.button}>
-              <Image source={require('./assets/baseline_panorama_fish_eye_black_24dp.png')} style={{width: 100, height: 100}} contentFit='contain'/>
+              <Image source={require('./assets/icons8-camera.svg')} style={{width: 100, height: 100}} contentFit='contain'/>
             </TouchableOpacity>
           </View>
         </Camera>
