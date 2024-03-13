@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { useEffect } from 'react';
 import { Camera, CameraType } from 'expo-camera'
 import { Image } from 'expo-image';
+import * as FileSystem from 'expo-file-system'
+import { Buffer } from "buffer";
 
 export default function App() {
   const [type, setType] = useState(CameraType.back);
@@ -12,16 +14,41 @@ export default function App() {
   const [guess, setGuess] = useState("")
   const cameraref = useRef(null)
 
+  const getGuess = async () => {
+    const base64 = await FileSystem.readAsStringAsync(image, { encoding: 'base64'})
+    let my_bytes = Buffer.from(base64, "base64")
+    const r = await fetch(image)
+    const blob = await r.blob()
+    var reader = new FileReader()
+    const req = {
+      img : reader.result
+    }
+    var headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application.json'
+    }
+    const response = async () => {
+      return await fetch('http://683a-2603-7081-1601-a4bd-f134-f8af-c995-8ee8.ngrok-free.app/guess', {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(req)
+        }).catch(function(error){console.log(error)})
+    }
+    response().then(resp => resp.json()).then(data => {console.log(data)})
+    console.log(guess)
+  }
+
   useEffect(() => {
     if(!permission) requestPermission();
-    setGuess("Berri!!!")
-    console.log("hit")
+    if(image){
+      getGuess()
+    }
   }, [image])
 
   const takePicture = async () => {
     if(cameraref){
       const data = await cameraref.current.takePictureAsync();
-      setImage(data)
+      setImage(data.uri)
     }
   }
 
