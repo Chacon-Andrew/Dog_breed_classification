@@ -133,7 +133,7 @@ class learner:
     self.model = tf.keras.models.load_model("Dog_breed_classification/model.h5")
 
   def predict(self):
-    img = tf.keras.preprocessing.image.load_img("Dog_breed_classification/pictures/20230416_113013.jpg")
+    img = tf.keras.preprocessing.image.load_img("Dog_breed_classification/predict_image.jpeg")
     img = tf.keras.preprocessing.image.img_to_array(img)
     img = tf.keras.preprocessing.image.smart_resize(img, (331, 331))
     img = tf.reshape(img, (-1, 331, 331, 3))
@@ -141,7 +141,3 @@ class learner:
     prediction = np.argmax(prediction)
     print(prediction)
     return classes[prediction]
-
-#train()
-l = learner()
-print(l.predict())

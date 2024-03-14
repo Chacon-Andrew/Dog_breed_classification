@@ -12,6 +12,7 @@ export default function App() {
   const [permission, requestPermission] = Camera.useCameraPermissions();
   const [image, setImage] = useState(null)
   const [guess, setGuess] = useState("")
+  const [uri, seturi] = useState("")
   const cameraref = useRef(null)
 
   const getGuess = async () => {
@@ -19,23 +20,31 @@ export default function App() {
     let my_bytes = Buffer.from(base64, "base64")
     const r = await fetch(image)
     const blob = await r.blob()
-    var reader = new FileReader()
-    const req = {
-      img : reader.result
-    }
     var headers = {
-      'Accept': 'application/json',
-      'Content-Type': 'application.json'
+      'Content-Type': 'content_type'
     }
-    const response = async () => {
-      return await fetch('http://683a-2603-7081-1601-a4bd-f134-f8af-c995-8ee8.ngrok-free.app/guess', {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(req)
-        }).catch(function(error){console.log(error)})
+    var reader = new FileReader()
+    reader.onload = () => {
+      var api = 'https://983f-2603-7081-1601-a4bd-50fe-c21d-1e3c-c8a2.ngrok-free.app/guess'
+      const response = async () => {
+        return await fetch(api, {
+          method: 'POST',
+          headers: headers,
+          body: reader.result
+        }).catch(function(error) {console.log(error)})
+      }
+      response().then(resp => resp.json()).then(dat => {setGuess(dat.answer)}).catch(function(error){console.log(error)})
     }
-    response().then(resp => resp.json()).then(data => {console.log(data)})
-    console.log(guess)
+    reader.readAsDataURL(blob)
+    // const response = async () => {
+    //   return await FileSystem.uploadAsync('https://983f-2603-7081-1601-a4bd-50fe-c21d-1e3c-c8a2.ngrok-free.app/guess', objectURL, {
+    //     headers: headers,
+    //     httpMethod: 'POST',
+    //     uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+    //     }).catch(function(error){console.log(error)})
+    // }
+    // response().then(resp => resp.json()).then(data => {console.log(data)}).catch(function(error){ console.log(error)})
+    // console.log(guess)
   }
 
   useEffect(() => {
