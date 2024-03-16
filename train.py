@@ -139,5 +139,4 @@ class learner:
     img = tf.reshape(img, (-1, 331, 331, 3))
     prediction = self.model.predict(img/255)
     prediction = np.argmax(prediction)
-    print(prediction)
     return classes[prediction]
